@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>wkhtmltoimage Test Page</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .badge {
+            display: inline-block;
+            background: #764ba2;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin: 5px;
+        }
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ wkhtmltoimage</h1>
+
+        <div class="info-box">
+            <h3 style="margin-top: 0; color: #667eea;">Image Conversion Test</h3>
+            <p>
+                This page tests the wkhtmltoimage functionality, which converts
+                HTML to various image formats (JPEG, PNG, etc.).
+            </p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <span class="badge">HTML5</span>
+            <span class="badge">CSS3</span>
+            <span class="badge">WebKit</span>
+            <span class="badge">CI/CD</span>
+        </div>
+
+        <div class="success">
+            ✓ Conversion Test Ready
+        </div>
+    </div>
+</body>
+</html>
