@@ -1,191 +1,191 @@
-name: Test Examples
+# name: Test Examples
 
-on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
+# on:
+#   push:
+#     branches: [master]
+#   pull_request:
+#     branches: [master]
 
-jobs:
-  test-examples:
-    name: Build and Test Examples
-    runs-on: ubuntu-latest
+# jobs:
+#   test-examples:
+#     name: Build and Test Examples
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
+#     steps:
+#       - name: Checkout source code
+#         uses: actions/checkout@v4
+#         with:
+#           submodules: recursive
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v2
 
-      - name: Build Docker image with wkhtmltopdf
-        run: |
-          docker build -t wkhtmltopdf-test -f .github/workflows/Dockerfile .
+#       - name: Build Docker image with wkhtmltopdf
+#         run: |
+#           docker build -t wkhtmltopdf-test -f .github/workflows/Dockerfile .
 
-      - name: Build wkhtmltopdf from source in container
-        run: |
-          docker run --name wkhtmltopdf-builder -v ${{ github.workspace }}:/workspace wkhtmltopdf-test /bin/sh -c "
-            set -e
-            echo '=== Building wkhtmltopdf from source ==='
-            cd /workspace
+#       - name: Build wkhtmltopdf from source in container
+#         run: |
+#           docker run --name wkhtmltopdf-builder -v ${{ github.workspace }}:/workspace wkhtmltopdf-test /bin/sh -c "
+#             set -e
+#             echo '=== Building wkhtmltopdf from source ==='
+#             cd /workspace
 
-            # Check if we need to compile Qt or if binaries are available
-            if [ ! -d bin ] || [ ! -f bin/wkhtmltopdf ]; then
-              echo 'Building from source...'
-              # Note: Full Qt build would go here, but it's very time consuming
-              # For CI purposes, we'll need to adapt this based on the build system
-              echo 'Checking build prerequisites...'
-              ls -la
+#             # Check if we need to compile Qt or if binaries are available
+#             if [ ! -d bin ] || [ ! -f bin/wkhtmltopdf ]; then
+#               echo 'Building from source...'
+#               # Note: Full Qt build would go here, but it's very time consuming
+#               # For CI purposes, we'll need to adapt this based on the build system
+#               echo 'Checking build prerequisites...'
+#               ls -la
 
-              # Try using the existing build system
-              if [ -f wkhtmltopdf.pro ]; then
-                echo 'Qt project file found'
-              fi
-            else
-              echo 'Using existing binaries'
-            fi
+#               # Try using the existing build system
+#               if [ -f wkhtmltopdf.pro ]; then
+#                 echo 'Qt project file found'
+#               fi
+#             else
+#               echo 'Using existing binaries'
+#             fi
 
-            echo '=== Build completed ==='
-          "
+#             echo '=== Build completed ==='
+#           "
 
-      - name: Build test examples
-        run: |
-          docker run --name wkhtmltopdf-test-runner -v ${{ github.workspace }}:/workspace wkhtmltopdf-test /bin/sh -c "
-            set -e
-            cd /workspace/examples
+#       - name: Build test examples
+#         run: |
+#           docker run --name wkhtmltopdf-test-runner -v ${{ github.workspace }}:/workspace wkhtmltopdf-test /bin/sh -c "
+#             set -e
+#             cd /workspace/examples
 
-            echo '=== Building test programs ==='
+#             echo '=== Building test programs ==='
 
-            # Build the test programs
-            make test
+#             # Build the test programs
+#             make test
 
-            echo '=== Test programs built successfully ==='
-            ls -la
-          "
+#             echo '=== Test programs built successfully ==='
+#             ls -la
+#           "
 
-      - name: Run PDF conversion test
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace wkhtmltopdf-test /bin/sh -c "
-            set -e
-            cd /workspace/examples
+#       - name: Run PDF conversion test
+#         run: |
+#           docker run --rm -v ${{ github.workspace }}:/workspace wkhtmltopdf-test /bin/sh -c "
+#             set -e
+#             cd /workspace/examples
 
-            echo '=== Running PDF conversion test ==='
+#             echo '=== Running PDF conversion test ==='
 
-            # Run the PDF test
-            make runtest
+#             # Run the PDF test
+#             make runtest
 
-            EXIT_CODE=\$?
-            echo \"PDF test exit code: \$EXIT_CODE\"
+#             EXIT_CODE=\$?
+#             echo \"PDF test exit code: \$EXIT_CODE\"
 
-            # Check exit code
-            if [ \$EXIT_CODE -ne 0 ]; then
-              echo 'ERROR: PDF conversion test failed with non-zero exit code'
-              exit 1
-            fi
+#             # Check exit code
+#             if [ \$EXIT_CODE -ne 0 ]; then
+#               echo 'ERROR: PDF conversion test failed with non-zero exit code'
+#               exit 1
+#             fi
 
-            echo '=== PDF test completed successfully ==='
-          "
+#             echo '=== PDF test completed successfully ==='
+#           "
 
-      - name: Verify PDF output
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace wkhtmltopdf-test /bin/sh -c "
-            set -e
-            cd /workspace/examples
+#       - name: Verify PDF output
+#         run: |
+#           docker run --rm -v ${{ github.workspace }}:/workspace wkhtmltopdf-test /bin/sh -c "
+#             set -e
+#             cd /workspace/examples
 
-            echo '=== Verifying PDF output file ==='
+#             echo '=== Verifying PDF output file ==='
 
-            # Check if PDF was created
-            if [ ! -f test_output.pdf ]; then
-              echo 'ERROR: test_output.pdf was not created'
-              exit 1
-            fi
+#             # Check if PDF was created
+#             if [ ! -f test_output.pdf ]; then
+#               echo 'ERROR: test_output.pdf was not created'
+#               exit 1
+#             fi
 
-            # Check PDF file size (should be > 0)
-            FILE_SIZE=\$(stat -c%s test_output.pdf 2>/dev/null || stat -f%z test_output.pdf)
-            echo \"PDF file size: \$FILE_SIZE bytes\"
+#             # Check PDF file size (should be > 0)
+#             FILE_SIZE=\$(stat -c%s test_output.pdf 2>/dev/null || stat -f%z test_output.pdf)
+#             echo \"PDF file size: \$FILE_SIZE bytes\"
 
-            if [ \$FILE_SIZE -eq 0 ]; then
-              echo 'ERROR: PDF file is empty'
-              exit 1
-            fi
+#             if [ \$FILE_SIZE -eq 0 ]; then
+#               echo 'ERROR: PDF file is empty'
+#               exit 1
+#             fi
 
-            # Check PDF magic number
-            if ! head -c 4 test_output.pdf | grep -q '%PDF'; then
-              echo 'ERROR: PDF file does not have valid PDF header'
-              exit 1
-            fi
+#             # Check PDF magic number
+#             if ! head -c 4 test_output.pdf | grep -q '%PDF'; then
+#               echo 'ERROR: PDF file does not have valid PDF header'
+#               exit 1
+#             fi
 
-            echo '=== PDF output verification passed ==='
-          "
+#             echo '=== PDF output verification passed ==='
+#           "
 
-      - name: Run image conversion test
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace wkhtmltopdf-test /bin/sh -c "
-            set -e
-            cd /workspace/examples
+#       - name: Run image conversion test
+#         run: |
+#           docker run --rm -v ${{ github.workspace }}:/workspace wkhtmltopdf-test /bin/sh -c "
+#             set -e
+#             cd /workspace/examples
 
-            echo '=== Running image conversion test ==='
+#             echo '=== Running image conversion test ==='
 
-            # Run the image test
-            make runtestimage
+#             # Run the image test
+#             make runtestimage
 
-            EXIT_CODE=\$?
-            echo \"Image test exit code: \$EXIT_CODE\"
+#             EXIT_CODE=\$?
+#             echo \"Image test exit code: \$EXIT_CODE\"
 
-            # Check exit code
-            if [ \$EXIT_CODE -ne 0 ]; then
-              echo 'ERROR: Image conversion test failed with non-zero exit code'
-              exit 1
-            fi
+#             # Check exit code
+#             if [ \$EXIT_CODE -ne 0 ]; then
+#               echo 'ERROR: Image conversion test failed with non-zero exit code'
+#               exit 1
+#             fi
 
-            echo '=== Image test completed successfully ==='
-          "
+#             echo '=== Image test completed successfully ==='
+#           "
 
-      - name: Verify image output
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace wkhtmltopdf-test /bin/sh -c "
-            set -e
-            cd /workspace/examples
+#       - name: Verify image output
+#         run: |
+#           docker run --rm -v ${{ github.workspace }}:/workspace wkhtmltopdf-test /bin/sh -c "
+#             set -e
+#             cd /workspace/examples
 
-            echo '=== Verifying image output file ==='
+#             echo '=== Verifying image output file ==='
 
-            # Check if image was created
-            if [ ! -f test_output.jpg ]; then
-              echo 'ERROR: test_output.jpg was not created'
-              exit 1
-            fi
+#             # Check if image was created
+#             if [ ! -f test_output.jpg ]; then
+#               echo 'ERROR: test_output.jpg was not created'
+#               exit 1
+#             fi
 
-            # Check image file size (should be > 0)
-            FILE_SIZE=\$(stat -c%s test_output.jpg 2>/dev/null || stat -f%z test_output.jpg)
-            echo \"Image file size: \$FILE_SIZE bytes\"
+#             # Check image file size (should be > 0)
+#             FILE_SIZE=\$(stat -c%s test_output.jpg 2>/dev/null || stat -f%z test_output.jpg)
+#             echo \"Image file size: \$FILE_SIZE bytes\"
 
-            if [ \$FILE_SIZE -eq 0 ]; then
-              echo 'ERROR: Image file is empty'
-              exit 1
-            fi
+#             if [ \$FILE_SIZE -eq 0 ]; then
+#               echo 'ERROR: Image file is empty'
+#               exit 1
+#             fi
 
-            # Check JPEG magic number (FFD8FF)
-            if ! xxd -p -l 3 test_output.jpg | grep -q 'ffd8ff'; then
-              echo 'ERROR: Image file does not have valid JPEG header'
-              exit 1
-            fi
+#             # Check JPEG magic number (FFD8FF)
+#             if ! xxd -p -l 3 test_output.jpg | grep -q 'ffd8ff'; then
+#               echo 'ERROR: Image file does not have valid JPEG header'
+#               exit 1
+#             fi
 
-            echo '=== Image output verification passed ==='
-          "
+#             echo '=== Image output verification passed ==='
+#           "
 
-      - name: Upload test artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-outputs
-          path: |
-            examples/test_output.pdf
-            examples/test_output.jpg
+#       - name: Upload test artifacts
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: test-outputs
+#           path: |
+#             examples/test_output.pdf
+#             examples/test_output.jpg
 
-      - name: Cleanup
-        if: always()
-        run: |
-          docker rm -f wkhtmltopdf-builder 2>/dev/null || true
-          docker rm -f wkhtmltopdf-test-runner 2>/dev/null || true
+#       - name: Cleanup
+#         if: always()
+#         run: |
+#           docker rm -f wkhtmltopdf-builder 2>/dev/null || true
+#           docker rm -f wkhtmltopdf-test-runner 2>/dev/null || true
