@@ -1,0 +1,184 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build-linux-qt5:
+    name: Build and Test on Linux with Qt5
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install Qt5 and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qtbase5-dev \
+            libqt5webkit5-dev \
+            libqt5xmlpatterns5-dev \
+            libqt5svg5-dev \
+            build-essential
+
+      - name: Build wkhtmltopdf
+        run: |
+          qmake CONFIG+=silent
+          make -j$(nproc)
+
+      - name: Check built binaries exist
+        run: |
+          ls -lh bin/
+          test -f bin/wkhtmltopdf
+          test -f bin/wkhtmltoimage
+          test -f bin/libwkhtmltox.so*
+
+      - name: Display version information
+        run: |
+          export LD_LIBRARY_PATH=$PWD/bin:$LD_LIBRARY_PATH
+          ./bin/wkhtmltopdf --version || echo "Version check failed but continuing..."
+          ./bin/wkhtmltoimage --version || echo "Version check failed but continuing..."
+
+      - name: Build C API examples
+        run: |
+          cd examples
+          make CFLAGS="-I ../include" LDFLAGS="-L ../bin -lwkhtmltox -Wall"
+
+      - name: Test PDF generation from HTML string
+        run: |
+          export LD_LIBRARY_PATH=$PWD/bin:$LD_LIBRARY_PATH
+          echo '<html><body><h1>Test PDF</h1></body></html>' > test.html
+          ./bin/wkhtmltopdf test.html test_output.pdf
+          test -f test_output.pdf
+          ls -lh test_output.pdf
+
+      - name: Test image generation from HTML string
+        run: |
+          export LD_LIBRARY_PATH=$PWD/bin:$LD_LIBRARY_PATH
+          echo '<html><body><h1>Test Image</h1></body></html>' > test.html
+          ./bin/wkhtmltoimage test.html test_output.png
+          test -f test_output.png
+          ls -lh test_output.png
+
+      - name: Test with sample HTML files
+        run: |
+          export LD_LIBRARY_PATH=$PWD/bin:$LD_LIBRARY_PATH
+          # Create a more complex HTML test file
+          cat > complex_test.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Test Document</title>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 40px; }
+                  h1 { color: #333; }
+                  p { line-height: 1.6; }
+              </style>
+          </head>
+          <body>
+              <h1>WKHTMLtoPDF Test Document</h1>
+              <p>This is a test document to verify that wkhtmltopdf can handle basic HTML formatting.</p>
+              <ul>
+                  <li>Item 1</li>
+                  <li>Item 2</li>
+                  <li>Item 3</li>
+              </ul>
+          </body>
+          </html>
+          EOF
+          ./bin/wkhtmltopdf complex_test.html complex_output.pdf
+          test -f complex_output.pdf
+          # Verify the PDF is not empty (at least 1KB)
+          test $(stat -c%s complex_output.pdf) -gt 1024
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: wkhtmltopdf-linux-qt5-binaries
+          path: |
+            bin/wkhtmltopdf
+            bin/wkhtmltoimage
+            bin/libwkhtmltox.so*
+
+      - name: Upload test outputs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-outputs-linux-qt5
+          path: |
+            test_output.pdf
+            test_output.png
+            complex_output.pdf
+
+  build-linux-qt5-ubuntu-22:
+    name: Build and Test on Ubuntu 22.04 with Qt5
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install Qt5 and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qtbase5-dev \
+            libqt5webkit5-dev \
+            libqt5xmlpatterns5-dev \
+            libqt5svg5-dev \
+            build-essential
+
+      - name: Build wkhtmltopdf
+        run: |
+          qmake CONFIG+=silent
+          make -j$(nproc)
+
+      - name: Check built binaries exist
+        run: |
+          ls -lh bin/
+          test -f bin/wkhtmltopdf
+          test -f bin/wkhtmltoimage
+
+      - name: Display version information
+        run: |
+          export LD_LIBRARY_PATH=$PWD/bin:$LD_LIBRARY_PATH
+          ./bin/wkhtmltopdf --version || echo "Version check failed but continuing..."
+
+      - name: Test basic PDF generation
+        run: |
+          export LD_LIBRARY_PATH=$PWD/bin:$LD_LIBRARY_PATH
+          echo '<html><body><h1>Test</h1></body></html>' > test.html
+          ./bin/wkhtmltopdf test.html output.pdf
+          test -f output.pdf
+
+  static-analysis:
+    name: Code Quality Checks
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Check file permissions
+        run: |
+          # Ensure shell scripts are executable
+          find . -name "*.sh" -type f ! -perm -u+x -exec echo "Warning: {} is not executable" \;
+
+      - name: Check for trailing whitespace
+        run: |
+          # Check for trailing whitespace in source files (warning only)
+          if git grep -I -n '[[:blank:]]$' -- '*.cc' '*.hh' '*.h' '*.c' '*.cpp' '*.hpp' 2>/dev/null; then
+            echo "Warning: Found trailing whitespace in source files"
+          fi
+
+      - name: Verify build files exist
+        run: |
+          test -f wkhtmltopdf.pro
+          test -f common.pri
+          test -f VERSION
+          echo "All required build files present"
