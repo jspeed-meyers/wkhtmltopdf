@@ -45,9 +45,9 @@ This directory contains GitHub Actions workflows for continuous integration and 
 ### unpatched.yml
 **Purpose**: Build using unpatched system Qt packages (Qt4 and Qt5).
 
-**Platforms**: Ubuntu 18.04 (Qt4), Ubuntu 20.04 (Qt5)
+**Platforms**: Ubuntu 18.04 (Qt4, legacy), Ubuntu 20.04 (Qt5)
 
-**Details**: Simpler builds for testing compatibility with unpatched Qt.
+**Details**: Simpler builds for testing compatibility with unpatched Qt. Note: Ubuntu 18.04 is used for Qt4 legacy support only.
 
 ## Workflow Design Philosophy
 
@@ -98,5 +98,5 @@ echo '<html><body><h1>Test</h1></body></html>' > test.html
 
 - The `build-and-test.yml` workflow uses system Qt packages for speed
 - For official releases, use the `official.yml` workflow which uses the packaging repository
-- Keep workflow Ubuntu versions aligned with active LTS releases
+- Keep workflow Ubuntu versions aligned with active LTS releases (except where legacy support is needed, like Qt4 in `unpatched.yml`)
 - Update action versions (e.g., `actions/checkout@v2`) periodically
